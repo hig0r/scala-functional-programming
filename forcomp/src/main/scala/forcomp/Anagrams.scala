@@ -83,13 +83,11 @@ object Anagrams extends AnagramsInterface :
    * in the example above could have been displayed in some other order.
    */
   def combinations(occurrences: Occurrences): List[Occurrences] =
-    occurrences.flatMap { case (char, count) =>
-      (1 to count).flatMap { n =>
-        combinations(occurrences.filter(_._1 > char)).map { occ =>
-          (char, n) :: occ
-        }
-      }
-    } ::: List(Nil)
+    (for {
+      (char, count) <- occurrences
+      n <- 1 to count
+      c <- combinations(occurrences.filter(_._1 > char))
+    } yield (char, n) :: c) ::: List(Nil)
 
   /** Subtracts occurrence list `y` from occurrence list `x`.
    *
@@ -161,12 +159,12 @@ object Anagrams extends AnagramsInterface :
     def run(occurrences: Occurrences, acc: Sentence): List[Sentence] =
       if occurrences == Nil then List(acc)
       else
-        combinations(occurrences).flatMap { c =>
-          val words = dictionaryByOccurrences.getOrElse(c, Nil)
-          words.flatMap { w =>
-            run(subtract(occurrences, c), w +: acc)
-          }
-        }
+        for {
+          c <- combinations(occurrences)
+          w <- dictionaryByOccurrences.getOrElse(c, Nil)
+          s <- run(subtract(occurrences, c), w +: acc)
+        } yield s
+
     run(occurrences, List.empty)
 
 object Dictionary:
